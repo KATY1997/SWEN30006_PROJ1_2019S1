@@ -22,8 +22,11 @@ public class Robot {
     public RobotState current_state;
     private int current_floor;
     private int destination_floor;
+    private int ticks_per_step = 1;
+    private int timer = 0;
     private IMailPool mailPool;
     private boolean receivedDispatch;
+    private boolean team_member = false;
     
     private MailItem deliveryItem = null;
     private MailItem tube = null;
@@ -49,6 +52,22 @@ public class Robot {
         this.deliveryCounter = 0;
     }
     
+    public void switch_team_status() {
+    	if (team_member == false) {
+    		ticks_per_step = 3;
+    		team_member = true;
+    	}
+    	if (team_member == true) {
+    		ticks_per_step = 1;
+    		team_member = false;
+    	}
+    }
+    
+    public boolean get_team_status() {
+    	return this.team_member;
+    }
+    
+    
     public void dispatch() {
     	receivedDispatch = true;
     }
@@ -57,7 +76,8 @@ public class Robot {
      * This is called on every time step
      * @throws ExcessiveDeliveryException if robot delivers more than the capacity of the tube without refilling
      */
-    public void step() throws ExcessiveDeliveryException {    	
+    public void step() throws ExcessiveDeliveryException {   
+    	
     	switch(current_state) {
     		/** This state is triggered when the robot is returning to the mailroom after a delivery */
     		case RETURNING:
@@ -72,6 +92,7 @@ public class Robot {
         			mailPool.registerWaiting(this);
                 	changeState(RobotState.WAITING);
                 } else {
+                	timer += 1 ;
                 	/** If the robot is not at the mailroom floor yet, then move towards it! */
                     moveTowards(Building.MAILROOM_LOCATION);
                 	break;
@@ -107,6 +128,7 @@ public class Robot {
                     }
     			} else {
 	        		/** The robot is not at the destination yet, move towards it! */
+    				timer += 1 ;
 	                moveTowards(destination_floor);
     			}
                 break;
@@ -126,11 +148,18 @@ public class Robot {
      * @param destination the floor towards which the robot is moving
      */
     private void moveTowards(int destination) {
-        if(current_floor < destination){
-            current_floor++;
-        } else {
-            current_floor--;
-        }
+    	if(timer == ticks_per_step) {
+    		
+    		System.out.println("timer");
+    		System.out.println(timer);
+        	if(current_floor < destination){
+        		current_floor++;
+        	} else {
+        		current_floor--;
+        	}
+        	timer = 0;
+        	
+    	}
     }
     
     private String getIdTube() {
@@ -174,7 +203,7 @@ public class Robot {
 	public void addToHand(MailItem mailItem) throws ItemTooHeavyException {
 		assert(deliveryItem == null);
 		deliveryItem = mailItem;
-		if (deliveryItem.weight > INDIVIDUAL_MAX_WEIGHT) throw new ItemTooHeavyException();
+		//if (deliveryItem.weight > INDIVIDUAL_MAX_WEIGHT) throw new ItemTooHeavyException();
 	}
 
 	public void addToTube(MailItem mailItem) throws ItemTooHeavyException {
