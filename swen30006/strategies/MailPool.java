@@ -41,12 +41,17 @@ public class MailPool implements IMailPool {
 		}
 	}
 	
+
 	private LinkedList<Item> pool;
+	private LinkedList<Item> pairPool;
+	private LinkedList<Item> triplePool;
 	private LinkedList<Robot> robots;
 
 	public MailPool(int nrobots){
 		// Start empty
 		pool = new LinkedList<Item>();
+		pairPool = new LinkedList<Item>();
+		triplePool = new LinkedList<Item>();
 		robots = new LinkedList<Robot>();
 	}
 
@@ -67,20 +72,86 @@ public class MailPool implements IMailPool {
 	}
 	
 	private void loadRobot(ListIterator<Robot> i) throws ItemTooHeavyException {
-		Robot robot = i.next();
-		assert(robot.isEmpty());
+	
+		int dummy = 1;
 		// System.out.printf("P: %3d%n", pool.size());
 		ListIterator<Item> j = pool.listIterator();
+		
+		
+		
 		if (pool.size() > 0) {
+			
+	
+			
+
+			
 			try {
-			robot.addToHand(j.next().mailItem); // hand first as we want higher priority delivered first
-			j.remove();
-			if (pool.size() > 0) {
-				robot.addToTube(j.next().mailItem);
+				
+			MailItem mail = j.next().mailItem;
+			
+			if((mail.getWeight()>2000) && (mail.getWeight()<2600)) {
+				Item item = new Item(mail);
+				pairPool.add(item);
+				pairPool.sort(new ItemComparator());
 				j.remove();
+				mail = j.next().mailItem;
+				
 			}
-			robot.dispatch(); // send the robot off if it has any items to deliver
-			i.remove();       // remove from mailPool queue
+			
+			else if((mail.getWeight()>2600) && (mail.getWeight()<3000)) {
+				Item item = new Item(mail);
+				triplePool.add(item);
+				triplePool.sort(new ItemComparator());
+				j.remove();
+				mail = j.next().mailItem;
+			}
+			
+			
+				
+				
+			if (pairPool.size()>0)  {
+			int k;
+				ListIterator<Item> pair = pool.listIterator();
+				for(k=0;k<2;k++) {
+					Robot robot = i.next();
+					assert(robot.isEmpty());
+					robot.addToHand(mail);
+					pair.remove();
+					robot.dispatch(); // send the robot off if it has any items to deliver
+					i.remove();       // remove from mailPool queue
+				}	
+			}
+				
+			else if (triplePool.size()>0 )  {
+				int k;
+				ListIterator<Item> triple = triplePool.listIterator();
+				for(k=0;k<3;k++) {
+					Robot robot = i.next();
+					assert(robot.isEmpty());
+					robot.addToHand(mail);
+					triple.remove();
+					robot.dispatch(); // send the robot off if it has any items to deliver
+					i.remove();       // remove from mailPool queue
+						
+				}	
+			}
+				
+			else {
+				
+				Robot robot = i.next();
+				assert(robot.isEmpty());
+				robot.addToHand(mail); // hand first as we want higher priority delivered first
+				j.remove();
+				if (pool.size() > 0) {
+					robot.addToTube(j.next().mailItem);
+					j.remove();
+				}
+				robot.dispatch(); // send the robot off if it has any items to deliver
+				i.remove();       // remove from mailPool queue
+			}
+			
+			
+		
 			} catch (Exception e) { 
 	            throw e; 
 	        } 
