@@ -110,6 +110,11 @@ public class Robot {
     			if(current_floor == destination_floor){ // If already here drop off either way
                     /** Delivery complete, report this to the simulator! */
                     delivery.deliver(deliveryItem);
+                    
+                    if (get_team_status() == true) {
+						switch_team_status();
+					}
+                    
                     deliveryItem = null;
                     deliveryCounter++;
                     if(deliveryCounter > 2){  // Implies a simulation bug
