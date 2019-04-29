@@ -3,6 +3,7 @@ package strategies;
 import java.util.LinkedList;
 import java.util.Comparator;
 import java.util.ListIterator;
+import java.util.WeakHashMap;
 
 import automail.MailItem;
 import automail.PriorityMailItem;
@@ -45,6 +46,7 @@ public class MailPool implements IMailPool {
 	private LinkedList<Item> pairPool;
 	private LinkedList<Item> triplePool;
 	private LinkedList<Robot> robots;
+	private LinkedList<Robot> waitingRobots;
 
 	public MailPool(int nrobots) {
 		// Start empty
@@ -52,36 +54,24 @@ public class MailPool implements IMailPool {
 		pairPool = new LinkedList<Item>();
 		triplePool = new LinkedList<Item>();
 		robots = new LinkedList<Robot>();
-	}
-
-	private void sortPool(LinkedList<Item> pool) {
-		ListIterator<Item> j = pool.listIterator();
-		if (pool.size() > 0) {
-
-			MailItem mail = j.next().mailItem;
-			while (mail.getWeight() > 2000) {
-
-				if ((mail.getWeight() > 2000) && (mail.getWeight() <= 2600)) {
-					Item item = new Item(mail);
-					pairPool.add(item);
-					pairPool.sort(new ItemComparator());
-					j.remove();
-
-				} else if ((mail.getWeight() > 2600) && (mail.getWeight() <= 3000)) {
-					Item item = new Item(mail);
-					triplePool.add(item);
-					triplePool.sort(new ItemComparator());
-					j.remove();
-				}
-
-			}
-		}
+		waitingRobots = new LinkedList<Robot>();
 	}
 
 	public void addToPool(MailItem mailItem) {
+		// put item into different pool based on its weight
 		Item item = new Item(mailItem);
-		pool.add(item);
-		pool.sort(new ItemComparator());
+		int weight = mailItem.getWeight();
+
+		if (weight <= 2000) {
+			pool.add(item);
+			pool.sort(new ItemComparator());
+		} else if (weight > 2000 && weight <= 2600) {
+			pairPool.add(item);
+			pairPool.sort(new ItemComparator());
+		} else if (weight > 2600 && weight <= 3000) {
+			triplePool.add(item);
+			triplePool.sort(new ItemComparator());
+		}
 	}
 
 	@Override
@@ -96,117 +86,135 @@ public class MailPool implements IMailPool {
 	}
 
 	private void loadRobot(ListIterator<Robot> i) throws ItemTooHeavyException {
-		
-		// System.out.printf("P: %3d%n", pool.size());
-		sortPool(pool);
 
-		if (pool.size() > 0 || pairPool.size() > 0 || triplePool.size() > 0) {
-			System.out.println("-----");
-			try {
-				int poolID = getHighestProityItem();
-				switch (poolID) {
-				case 1:
-					Robot robot = i.next();
-					assert (robot.isEmpty());
-					if (robot.get_team_status() == true) {
-						robot.switch_team_status();
-					}
-					robot.addToHand(pool.removeLast().mailItem); // hand first
-																	// as we
-																	// want
-																	// higher
-					// priority delivered first
+		/** choose which pool to use, the number that returned also indicates the numbers of robot that the item need */
+		int poolID = choosePool();
+
+		switch (poolID) {
+		case 1:
+			Robot robot = i.next();
+			assert (robot.isEmpty());
+			ListIterator<Item> poolIterator = pool.listIterator();
+			if (pool.size() > 0) {
+				try {
+					// hand first as we want higher priority delivered first
+					robot.setTeamState(false);
+					robot.numOfTeam = poolID;
+					robot.addToHand(poolIterator.next().mailItem);
+					poolIterator.remove();
 					if (pool.size() > 0) {
-						MailItem tubeItem = null;
-						for (int j = 0; j < pool.size(); j++) {
-							if (pool.get(j).mailItem.getWeight() <= 2000) {
-								tubeItem = pool.get(j).mailItem;
-							}
-						}
-						robot.addToTube(tubeItem);
+						robot.addToTube(poolIterator.next().mailItem);
+						poolIterator.remove();
 					}
-					robot.dispatch(); // send the robot off if it has any items
-										// to deliver
+					// send the robot off if it has any items to deliver
+					robot.dispatch();
 					i.remove(); // remove from mailPool queue
-					break;
-				case 2:
-					if (pairPool.size() > 0 && robots.size() >= 2) {
-
-						ListIterator<Item> pair = pairPool.listIterator();
-						for (int k = 0; k < 2; k++) {
-							Robot pairRobot = i.next();
-							assert (pairRobot.isEmpty());
-							if (pairRobot.get_team_status() == false) {
-								pairRobot.switch_team_status();
-							}
-
-							assert (pairRobot.isEmpty());
-							pairRobot.addToHand(pairPool.getLast().mailItem);
-
-							pairRobot.dispatch(); // send the robot off if it
-													// has any
-													// items to deliver
-							i.remove(); // remove from mailPool queue
-						}
-						pair.remove();
-					}
-
-					break;
-				case 3:
-					if (triplePool.size() > 0 && robots.size() >= 3) {
-
-						ListIterator<Item> triple = triplePool.listIterator();
-						for (int k = 0; k < 3; k++) {
-							Robot tripleRobot = i.next();
-							assert (tripleRobot.isEmpty());
-							if (tripleRobot.get_team_status() == false) {
-								tripleRobot.switch_team_status();
-							}
-
-							assert (tripleRobot.isEmpty());
-							tripleRobot.addToHand(triplePool.getLast().mailItem);
-
-							tripleRobot.dispatch(); // send the robot off if it
-													// has any
-							// items to deliver
-							i.remove(); // remove from mailPool queue
-						}
-						triple.remove();
-					}
-					break;
+				} catch (Exception e) {
+					throw e;
 				}
-
-			} catch (Exception e) {
-				throw e;
 			}
+			break;
+		case 2:
+			if (robots.size() >= poolID && pairPool.size()>0) {
+				ListIterator<Item> pairIterator = pairPool.listIterator();
+				MailItem item = pairIterator.next().mailItem;
+				pairIterator.remove();
+				// get two robots
+				for (int k = 0; k < poolID; k++) {
+					try {
+						Robot pairRobot = i.next();
+						assert (pairRobot.isEmpty());
+						pairRobot.setTeamState(true);
+						pairRobot.numOfTeam = poolID; // robots are working in pairs
+//						pairRobot.setNormalSpeed(false);
+						pairRobot.addToHand(item);
+						pairRobot.dispatch();
+						i.remove();
+					} catch (Exception e) {
+						throw e;
+					}
+				}
+			
+			} else {
+				waitingRobots.add(i.next());
+				i.remove();
+				if (waitingRobots.size() == poolID) {
+					robots = new LinkedList<>(waitingRobots);
+					waitingRobots.clear();
+				}
+			}
+			break;
+		case 3:
+			if (robots.size() >= poolID && triplePool.size()>0) {
+				ListIterator<Item> tripleIterator = triplePool.listIterator();
+				MailItem item = tripleIterator.next().mailItem;
+				tripleIterator.remove();
+				// get three robots
+				for (int k = 0; k < poolID; k++) {
+					try {
+						Robot tripleRobot = i.next();
+						assert (tripleRobot.isEmpty());
+						tripleRobot.setTeamState(true);
+						tripleRobot.numOfTeam = poolID;// robots are working in triples
+//						tripleRobot.setNormalSpeed(false);
+						tripleRobot.addToHand(item);
+						tripleRobot.dispatch();
+						i.remove();
+					} catch (Exception e) {
+						throw e;
+					}
+				}
+				
+			} else {
+				waitingRobots.add(i.next());
+				i.remove();
+				if (waitingRobots.size() == poolID) {
+					robots = new LinkedList<>(waitingRobots);
+					waitingRobots.clear();
+				}
+			}
+			break;
+		
 		}
 
 	}
 
-	private int getHighestProityItem() {
-		int poolItem = 0;
-		int pariItem = 0;
-		int tripleItem = 0;
+	/**
+	 * compare the Item in the three pools, determine which pool has the highest
+	 * priotiry
+	 * 
+	 * @return a num indicate the pool(1)/pairPool(2)/triplePool(3), it also
+	 *         shows how many robots this item requires
+	 */
+	private int choosePool() {
+		LinkedList<Item> items = new LinkedList<>();
+
 		if (pool.size() > 0) {
-			poolItem = pool.getFirst().priority;
+			Item poolItem = pool.element();
+			items.add(poolItem);
 		}
 		if (pairPool.size() > 0) {
-			pariItem = pairPool.getFirst().priority;
+			Item pairItem = pairPool.element();
+			items.add(pairItem);
 		}
 		if (triplePool.size() > 0) {
-			tripleItem = triplePool.getFirst().priority;
+			Item tripleItem = triplePool.element();
+			items.add(tripleItem);
 		}
 
-		int highest = Math.max(poolItem, Math.max(poolItem, tripleItem));
+		items.sort(new ItemComparator());
 
-		if (highest == poolItem) {
-			return 1;
-		} else if (highest == pariItem) {
-			return 2;
-		} else if (highest == tripleItem) {
-			return 3;
+		if (items.size() > 0) {
+			int weitht = items.getFirst().mailItem.getWeight();
+			if (weitht <= 2000) {
+				return 1; // use pool
+			} else if (weitht > 2000 && weitht <= 2600) {
+				return 2; // use pairPool
+			} else if (weitht > 2600 && weitht <= 3000){
+				return 3; // use triplePool
+			}
 		}
-		return 1;
+		return 1; // nothing need to be delivered, all the pools are empty
 	}
 
 	@Override
