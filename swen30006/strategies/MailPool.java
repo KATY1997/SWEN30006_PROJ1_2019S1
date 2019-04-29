@@ -57,7 +57,7 @@ public class MailPool implements IMailPool {
 	}
 
 	public void addToPool(MailItem mailItem) {
-		// put item into different pool based on its weight
+		// put item into different pool based on its weight, sort the pool in the same time
 		Item item = new Item(mailItem);
 		int weight = mailItem.getWeight();
 
@@ -127,15 +127,16 @@ public class MailPool implements IMailPool {
 	}
 
 	/**
-	 * compare the Item in the three pools, determine which pool has the highest
-	 * priotiry
+	 * compare the Item in the three pools, return which pool has the highest priority
+	 * (i.e) which pool need to deliver its item first
 	 * 
-	 * @return a num indicate the pool(1)/pairPool(2)/triplePool(3), it also
-	 *         shows how many robots this item requires
+	 * @return a num indicate the pool(1)/pairPool(2)/triplePool(3), the number also
+	 *         indicates how many robots this item requires
 	 */
 	private int choosePool() {
 		LinkedList<Item> items = new LinkedList<>();
 
+		// if the pool is not empty, retrive the items and put them it a list
 		if (pool.size() > 0) {
 			Item poolItem = pool.element();
 			items.add(poolItem);
@@ -149,6 +150,7 @@ public class MailPool implements IMailPool {
 			items.add(tripleItem);
 		}
 
+		// sort the List
 		items.sort(new ItemComparator());
 
 		if (items.size() > 0) {
@@ -169,20 +171,28 @@ public class MailPool implements IMailPool {
 		robots.add(robot);
 	}
 
+	/**
+	 * called when robots going to work in groups, either in a group of 2 or a group of 3
+	 * @param poolID : a number that indicates how many robots are required for this item
+	 * @param thePool : which pool to use
+	 * @param i : the iterator of the linkedList<Robot>
+	 * @throws ItemTooHeavyException
+	 */
 	public void robotWorkInGroups(int poolID, LinkedList<Item> thePool, ListIterator<Robot> i)
 			throws ItemTooHeavyException {
+		
+		/// if we have enough robots, processing loading procedure
 		if (robots.size() >= poolID && thePool.size() > 0) {
 			ListIterator<Item> iterator = thePool.listIterator();
 			MailItem item = iterator.next().mailItem;
 			iterator.remove();
-			// get robots
+			// get robots concerning to the item's weight
 			for (int k = 0; k < poolID; k++) {
 				try {
 					Robot robot = i.next();
 					assert (robot.isEmpty());
-					robot.setTeamState(true);
-					robot.numOfTeam = poolID; // indicate how many robots in the
-												// group
+					robot.setTeamState(true);// the robot working in team now
+					robot.numOfTeam = poolID; //  how many robots in the team
 					robot.addToHand(item);
 					robot.dispatch();
 					i.remove();
@@ -191,7 +201,7 @@ public class MailPool implements IMailPool {
 				}
 			}
 		} 
-		else {
+		else {	// wait for more robots coming
 			Robot robot = i.next();
 			assert (robot.isEmpty());
 		}

@@ -29,14 +29,13 @@ public class Robot {
 	private IMailPool mailPool;
 	private boolean receivedDispatch;
 
-	public boolean teamState; // in default the robot is doing
-								// individually
-	public int numOfTeam; // 1 refers to one robot carry one item, 2 means they
-							// work in pairs, 3 means three robots are working together
-
 	private MailItem deliveryItem = null;
 	private MailItem tube = null;
-	private int timer;
+	
+	public boolean teamState; // in default the robot work individually
+	public int numOfTeam; // 1 refers to one robot carry one item, 2 means they
+							// work in pairs, 3 means three robots are working together
+	private int timer;	// a timer for slowing the speed when robots are working in teams
 	
 	private int deliveryCounter;
 
@@ -61,8 +60,8 @@ public class Robot {
 		this.receivedDispatch = false;
 		this.deliveryCounter = 0;
 		this.teamState = false;
-		this.numOfTeam = 1;
-		this.timer = 1;
+		this.numOfTeam = 1;	// in default the robot work individually
+		this.timer = 1;	// default value
 	}
 
 	public void dispatch() {
@@ -123,7 +122,8 @@ public class Robot {
 				/** Delivery complete, report this to the simulator! */
 				
 				delivery.deliver(deliveryItem, numOfTeam);
-				// now the robot is not working in groups
+				
+				// if robots are in a team state, reset it after they unload the items
 				if (getTeamState() == true) {
 					setTeamState(false);
 				}
@@ -156,10 +156,6 @@ public class Robot {
 		}
 	}
 
-	private boolean getTeamState() {
-		return this.teamState;
-	}
-
 	/**
 	 * Sets the route for the robot
 	 */
@@ -170,6 +166,7 @@ public class Robot {
 
 	/**
 	 * Generic function that moves the robot towards the destination
+	 * In group working case, they move 1/3 speed then normal case
 	 * 
 	 * @param destination
 	 *            the floor towards which the robot is moving
@@ -184,7 +181,7 @@ public class Robot {
 				current_floor--;
 			}
 		} else {
-			timer++;
+			timer++;	// increase the timer
 		}
 
 	}
@@ -249,6 +246,10 @@ public class Robot {
 
 	public void setTeamState(boolean state) {
 		this.teamState = state;
+	}
+	
+	private boolean getTeamState() {
+		return this.teamState;
 	}
 
 }
