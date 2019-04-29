@@ -29,17 +29,15 @@ public class Robot {
 	private IMailPool mailPool;
 	private boolean receivedDispatch;
 
-	public boolean team_state; // in default the robot is doing
+	public boolean teamState; // in default the robot is doing
 								// individually
 	public int numOfTeam; // 1 refers to one robot carry one item, 2 means they
-							// work in pairs
-//	private boolean normalSpeed; // true meand the robot is in normal speed,
-									// otherwise it moves slower
+							// work in pairs, 3 means three robots are working together
 
 	private MailItem deliveryItem = null;
 	private MailItem tube = null;
 	private int timer;
-
+	
 	private int deliveryCounter;
 
 	/**
@@ -56,16 +54,14 @@ public class Robot {
 	 */
 	public Robot(IMailDelivery delivery, IMailPool mailPool) {
 		id = "R" + hashCode();
-		// current_state = RobotState.WAITING;
 		current_state = RobotState.RETURNING;
 		current_floor = Building.MAILROOM_LOCATION;
 		this.delivery = delivery;
 		this.mailPool = mailPool;
 		this.receivedDispatch = false;
 		this.deliveryCounter = 0;
-		this.team_state = false;
+		this.teamState = false;
 		this.numOfTeam = 1;
-//		this.normalSpeed = true;
 		this.timer = 1;
 	}
 
@@ -98,12 +94,6 @@ public class Robot {
 					tube = null;
 				}
 				/** Tell the sorter the robot is ready */
-//				if (getTeamState() == true) {
-//					setTeamState(false);
-//				}
-//				this.numOfTeam = 1;
-//				this.timer = 1;
-				
 				mailPool.registerWaiting(this);
 				changeState(RobotState.WAITING);
 			} else {
@@ -137,9 +127,7 @@ public class Robot {
 				if (getTeamState() == true) {
 					setTeamState(false);
 				}
-				this.timer = 1;
-				this.numOfTeam = 1;
-
+				
 				deliveryItem = null;
 				deliveryCounter++;
 				if (deliveryCounter > 2) { // Implies a simulation bug
@@ -148,7 +136,7 @@ public class Robot {
 				/**
 				 * Check if want to return, i.e. if there is no item in the tube
 				 */
-				if (tube == null || team_state == true) {
+				if (tube == null || teamState == true) {
 					changeState(RobotState.RETURNING);
 				} else {
 					/**
@@ -169,7 +157,7 @@ public class Robot {
 	}
 
 	private boolean getTeamState() {
-		return this.team_state;
+		return this.teamState;
 	}
 
 	/**
@@ -188,7 +176,7 @@ public class Robot {
 	 */
 	private void moveTowards(int destination) {
 
-		if (!team_state|| this.timer == 3) {
+		if (!teamState|| this.timer == 3) {
 			timer = 1;
 			if (current_floor < destination) {
 				current_floor++;
@@ -248,7 +236,7 @@ public class Robot {
 	public void addToHand(MailItem mailItem) throws ItemTooHeavyException {
 		assert (deliveryItem == null);
 		deliveryItem = mailItem;
-		if (deliveryItem.weight > INDIVIDUAL_MAX_WEIGHT && team_state == false)
+		if (deliveryItem.weight > INDIVIDUAL_MAX_WEIGHT && teamState == false)
 			throw new ItemTooHeavyException();
 	}
 
@@ -260,15 +248,7 @@ public class Robot {
 	}
 
 	public void setTeamState(boolean state) {
-		this.team_state = state;
+		this.teamState = state;
 	}
-
-//	public boolean isNormalSpeed() {
-//		return normalSpeed;
-//	}
-//
-//	public void setNormalSpeed(boolean normalSpeed) {
-//		this.normalSpeed = normalSpeed;
-//	}
 
 }

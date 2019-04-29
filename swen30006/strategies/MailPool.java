@@ -2,6 +2,7 @@ package strategies;
 
 import java.util.LinkedList;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.ListIterator;
 import java.util.WeakHashMap;
 
@@ -46,7 +47,6 @@ public class MailPool implements IMailPool {
 	private LinkedList<Item> pairPool;
 	private LinkedList<Item> triplePool;
 	private LinkedList<Robot> robots;
-	private LinkedList<Robot> waitingRobots;
 
 	public MailPool(int nrobots) {
 		// Start empty
@@ -54,7 +54,6 @@ public class MailPool implements IMailPool {
 		pairPool = new LinkedList<Item>();
 		triplePool = new LinkedList<Item>();
 		robots = new LinkedList<Robot>();
-		waitingRobots = new LinkedList<Robot>();
 	}
 
 	public void addToPool(MailItem mailItem) {
@@ -78,8 +77,9 @@ public class MailPool implements IMailPool {
 	public void step() throws ItemTooHeavyException {
 		try {
 			ListIterator<Robot> i = robots.listIterator();
-			while (i.hasNext())
+			while (i.hasNext()) {
 				loadRobot(i);
+			}
 		} catch (Exception e) {
 			throw e;
 		}
@@ -87,7 +87,10 @@ public class MailPool implements IMailPool {
 
 	private void loadRobot(ListIterator<Robot> i) throws ItemTooHeavyException {
 
-		/** choose which pool to use, the number that returned also indicates the numbers of robot that the item need */
+		/**
+		 * choose which pool to use, the number that returned also indicates the
+		 * numbers of robot that the item need
+		 */
 		int poolID = choosePool();
 
 		switch (poolID) {
@@ -115,68 +118,12 @@ public class MailPool implements IMailPool {
 			}
 			break;
 		case 2:
-			if (robots.size() >= poolID && pairPool.size()>0) {
-				ListIterator<Item> pairIterator = pairPool.listIterator();
-				MailItem item = pairIterator.next().mailItem;
-				pairIterator.remove();
-				// get two robots
-				for (int k = 0; k < poolID; k++) {
-					try {
-						Robot pairRobot = i.next();
-						assert (pairRobot.isEmpty());
-						pairRobot.setTeamState(true);
-						pairRobot.numOfTeam = poolID; // robots are working in pairs
-//						pairRobot.setNormalSpeed(false);
-						pairRobot.addToHand(item);
-						pairRobot.dispatch();
-						i.remove();
-					} catch (Exception e) {
-						throw e;
-					}
-				}
-			
-			} else {
-				waitingRobots.add(i.next());
-				i.remove();
-				if (waitingRobots.size() == poolID) {
-					robots = new LinkedList<>(waitingRobots);
-					waitingRobots.clear();
-				}
-			}
+			robotWorkInGroups(poolID, pairPool, i);
 			break;
 		case 3:
-			if (robots.size() >= poolID && triplePool.size()>0) {
-				ListIterator<Item> tripleIterator = triplePool.listIterator();
-				MailItem item = tripleIterator.next().mailItem;
-				tripleIterator.remove();
-				// get three robots
-				for (int k = 0; k < poolID; k++) {
-					try {
-						Robot tripleRobot = i.next();
-						assert (tripleRobot.isEmpty());
-						tripleRobot.setTeamState(true);
-						tripleRobot.numOfTeam = poolID;// robots are working in triples
-//						tripleRobot.setNormalSpeed(false);
-						tripleRobot.addToHand(item);
-						tripleRobot.dispatch();
-						i.remove();
-					} catch (Exception e) {
-						throw e;
-					}
-				}
-				
-			} else {
-				waitingRobots.add(i.next());
-				i.remove();
-				if (waitingRobots.size() == poolID) {
-					robots = new LinkedList<>(waitingRobots);
-					waitingRobots.clear();
-				}
-			}
+			robotWorkInGroups(poolID, triplePool, i);
 			break;
-		
 		}
-
 	}
 
 	/**
@@ -210,7 +157,7 @@ public class MailPool implements IMailPool {
 				return 1; // use pool
 			} else if (weitht > 2000 && weitht <= 2600) {
 				return 2; // use pairPool
-			} else if (weitht > 2600 && weitht <= 3000){
+			} else if (weitht > 2600 && weitht <= 3000) {
 				return 3; // use triplePool
 			}
 		}
@@ -222,4 +169,31 @@ public class MailPool implements IMailPool {
 		robots.add(robot);
 	}
 
+	public void robotWorkInGroups(int poolID, LinkedList<Item> thePool, ListIterator<Robot> i)
+			throws ItemTooHeavyException {
+		if (robots.size() >= poolID && thePool.size() > 0) {
+			ListIterator<Item> iterator = thePool.listIterator();
+			MailItem item = iterator.next().mailItem;
+			iterator.remove();
+			// get robots
+			for (int k = 0; k < poolID; k++) {
+				try {
+					Robot robot = i.next();
+					assert (robot.isEmpty());
+					robot.setTeamState(true);
+					robot.numOfTeam = poolID; // indicate how many robots in the
+												// group
+					robot.addToHand(item);
+					robot.dispatch();
+					i.remove();
+				} catch (Exception e) {
+					throw e;
+				}
+			}
+		} 
+		else {
+			Robot robot = i.next();
+			assert (robot.isEmpty());
+		}
+	}
 }

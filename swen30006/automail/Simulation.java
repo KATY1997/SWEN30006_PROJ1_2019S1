@@ -100,6 +100,12 @@ public class Simulation {
 		mailGenerator.generateAllMail();
 		// PriorityMailItem priority; // Not used in this version
 		while (MAIL_DELIVERED.size() != mailGenerator.MAIL_TO_CREATE) {
+
+			int t = Clock.Time();
+			if (t == 248) {
+				System.out.println("test");
+			}
+
 			// System.out.printf("Delivered: %4d; Created: %4d%n",
 			// MAIL_DELIVERED.size(), mailGenerator.MAIL_TO_CREATE);
 			mailGenerator.step();
@@ -118,18 +124,25 @@ public class Simulation {
 	}
 
 	static class ReportDelivery implements IMailDelivery {
-	   static int count = 0;
+		int count = 0;
 
 		/** Confirm the delivery and calculate the total score */
 		public void deliver(MailItem deliveryItem, int numsOfTeam) {
 			if (!MAIL_DELIVERED.contains(deliveryItem)) {
-				count ++;
-				if (numsOfTeam == count) {
-					count = 0;
+				if(numsOfTeam == 1){ // means only one robot is delivering this item
 					MAIL_DELIVERED.add(deliveryItem);
-					System.out.printf("T: %3d > Delivered(%4d) [%s]%n", Clock.Time(), MAIL_DELIVERED.size(),deliveryItem.toString());
+					System.out.printf("T: %3d > Delivered(%4d) [%s]%n", Clock.Time(), MAIL_DELIVERED.size(), deliveryItem.toString());
 					// Calculate delivery score
 					total_score += calculateDeliveryScore(deliveryItem);
+				}else {
+					count ++;	// this item is delivered by multiple robots, wait other robots to unload the item
+					if (count == numsOfTeam) { // all robots arrived
+						count = 0;	// reset counter
+						MAIL_DELIVERED.add(deliveryItem);
+						System.out.printf("T: %3d > Delivered(%4d) [%s]%n", Clock.Time(), MAIL_DELIVERED.size(), deliveryItem.toString());
+						// Calculate delivery score
+						total_score += calculateDeliveryScore(deliveryItem);
+					}
 				}
 			} else {
 				try {
