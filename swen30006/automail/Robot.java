@@ -32,9 +32,11 @@ public class Robot {
 	private MailItem deliveryItem = null;
 	private MailItem tube = null;
 	
-	public boolean teamState; // in default the robot work individually
-	public int numOfTeam; // 1 refers to one robot carry one item, 2 means they
-							// work in pairs, 3 means three robots are working together
+	private boolean teamState; // in default the robot work individually
+	private int numOfTeam; // 1 refers to one robot carry one item, 2 means they
+							
+
+	// work in pairs, 3 means three robots are working together
 	private int timer;	// a timer for slowing the speed when robots are working in teams
 	
 	private int deliveryCounter;
@@ -124,9 +126,7 @@ public class Robot {
 				delivery.deliver(deliveryItem, numOfTeam);
 				
 				// if robots are in a team state, reset it after they unload the items
-				if (getTeamState() == true) {
-					setTeamState(false);
-				}
+				setTeamState(false);
 				
 				deliveryItem = null;
 				deliveryCounter++;
@@ -248,8 +248,16 @@ public class Robot {
 		this.teamState = state;
 	}
 	
-	private boolean getTeamState() {
+	public boolean getTeamState() {
 		return this.teamState;
+	}
+	
+	public int getNumOfTeam() {
+		return numOfTeam;
+	}
+
+	public void setNumOfTeam(int numOfTeam) {
+		this.numOfTeam = numOfTeam;
 	}
 
 }

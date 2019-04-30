@@ -47,6 +47,7 @@ public class MailPool implements IMailPool {
 	private LinkedList<Item> pairPool;
 	private LinkedList<Item> triplePool;
 	private LinkedList<Robot> robots;
+	private int nrobots;
 
 	public MailPool(int nrobots) {
 		// Start empty
@@ -54,10 +55,12 @@ public class MailPool implements IMailPool {
 		pairPool = new LinkedList<Item>();
 		triplePool = new LinkedList<Item>();
 		robots = new LinkedList<Robot>();
+		this.nrobots = nrobots;
 	}
 
 	public void addToPool(MailItem mailItem) {
-		// put item into different pool based on its weight, sort the pool in the same time
+		// put item into different pool based on its weight, sort the pool in
+		// the same time
 		Item item = new Item(mailItem);
 		int weight = mailItem.getWeight();
 
@@ -93,8 +96,7 @@ public class MailPool implements IMailPool {
 		 */
 		int poolID = choosePool();
 
-		switch (poolID) {
-		case 1:
+		if (poolID == 1) {
 			Robot robot = i.next();
 			assert (robot.isEmpty());
 			ListIterator<Item> poolIterator = pool.listIterator();
@@ -102,7 +104,7 @@ public class MailPool implements IMailPool {
 				try {
 					// hand first as we want higher priority delivered first
 					robot.setTeamState(false);
-					robot.numOfTeam = poolID;
+					robot.setNumOfTeam(poolID); 
 					robot.addToHand(poolIterator.next().mailItem);
 					poolIterator.remove();
 					if (pool.size() > 0) {
@@ -115,23 +117,18 @@ public class MailPool implements IMailPool {
 				} catch (Exception e) {
 					throw e;
 				}
-			}
-			break;
-		case 2:
-			robotWorkInGroups(poolID, pairPool, i);
-			break;
-		case 3:
-			robotWorkInGroups(poolID, triplePool, i);
-			break;
+			} 
+		}else {
+			groupRobots(poolID, i);
 		}
 	}
 
 	/**
-	 * compare the Item in the three pools, return which pool has the highest priority
-	 * (i.e) which pool need to deliver its item first
+	 * compare the Item in the three pools, return which pool has the highest
+	 * priority (i.e) which pool need to deliver its item first
 	 * 
-	 * @return a num indicate the pool(1)/pairPool(2)/triplePool(3), the number also
-	 *         indicates how many robots this item requires
+	 * @return a num indicate the pool(1)/pairPool(2)/triplePool(3), the number
+	 *         also indicates how many robots this item requires
 	 */
 	private int choosePool() {
 		LinkedList<Item> items = new LinkedList<>();
@@ -172,15 +169,31 @@ public class MailPool implements IMailPool {
 	}
 
 	/**
-	 * called when robots going to work in groups, either in a group of 2 or a group of 3
-	 * @param poolID : a number that indicates how many robots are required for this item
-	 * @param thePool : which pool to use
-	 * @param i : the iterator of the linkedList<Robot>
+	 * called when robots going to work in groups, either in a group of 2 or a
+	 * group of 3
+	 * 
+	 * @param poolID
+	 *            : a number that indicates how many robots are required for
+	 *            this item
+	 * @param thePool
+	 *            : which pool to use
+	 * @param i
+	 *            : the iterator of the linkedList<Robot>
 	 * @throws ItemTooHeavyException
 	 */
-	public void robotWorkInGroups(int poolID, LinkedList<Item> thePool, ListIterator<Robot> i)
-			throws ItemTooHeavyException {
-		
+	public void groupRobots(int poolID, ListIterator<Robot> i) throws ItemTooHeavyException {
+		LinkedList<Item> thePool = new LinkedList<>();
+		// compare poolID with nRobots here
+		if (poolID > this.nrobots) {
+			throw new ItemTooHeavyException();
+		}
+
+		if (poolID == 2) {
+			thePool = pairPool;
+		} else if (poolID == 3){
+			thePool = triplePool;
+		}
+
 		/// if we have enough robots, processing loading procedure
 		if (robots.size() >= poolID && thePool.size() > 0) {
 			ListIterator<Item> iterator = thePool.listIterator();
@@ -192,7 +205,7 @@ public class MailPool implements IMailPool {
 					Robot robot = i.next();
 					assert (robot.isEmpty());
 					robot.setTeamState(true);// the robot working in team now
-					robot.numOfTeam = poolID; //  how many robots in the team
+					robot.setNumOfTeam(poolID);  // how many robots in the team
 					robot.addToHand(item);
 					robot.dispatch();
 					i.remove();
@@ -200,8 +213,7 @@ public class MailPool implements IMailPool {
 					throw e;
 				}
 			}
-		} 
-		else {	// wait for more robots coming
+		} else { // wait for more robots coming
 			Robot robot = i.next();
 			assert (robot.isEmpty());
 		}
