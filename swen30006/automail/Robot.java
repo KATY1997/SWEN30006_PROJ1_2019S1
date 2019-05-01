@@ -75,8 +75,9 @@ public class Robot {
 	 * @throws ExcessiveDeliveryException
 	 *             if robot delivers more than the capacity of the tube without
 	 *             refilling
+	 * @throws ItemTooHeavyException 
 	 */
-	public void step() throws ExcessiveDeliveryException {
+	public void step() throws ExcessiveDeliveryException, ItemTooHeavyException {
 		switch (current_state) {
 		/**
 		 * This state is triggered when the robot is returning to the mailroom

@@ -2,6 +2,7 @@ package automail;
 
 import java.util.*;
 
+import exceptions.ItemTooHeavyException;
 import strategies.IMailPool;
 
 /**
@@ -133,8 +134,9 @@ public class MailGenerator {
     /**
      * While there are steps left, create a new mail item to deliver
      * @return Priority
+     * @throws ItemTooHeavyException 
      */
-    public PriorityMailItem step(){
+    public PriorityMailItem step() throws ItemTooHeavyException{
     	PriorityMailItem priority = null;
     	// Check if there are any mail to create
         if(this.allMail.containsKey(Clock.Time())){
