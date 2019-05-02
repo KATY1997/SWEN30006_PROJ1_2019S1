@@ -18,6 +18,8 @@ public class MailItem {
     protected final int arrival_time;
     /** The weight in grams of the mail item */
     protected final int weight;
+    
+    private int robotsNeeded = 0;
 
     /**
      * Constructor for a MailItem
@@ -78,5 +80,13 @@ public class MailItem {
 		Integer hash = hashMap.get(hash0);
 		if (hash == null) { hash = count++; hashMap.put(hash0, hash); }
 		return hash;
+	}
+
+	public int getRobotsNeed() {
+		return robotsNeeded;
+	}
+
+	public void setRobotsNeed(int robotsNeed) {
+		this.robotsNeeded = robotsNeed;
 	}
 }

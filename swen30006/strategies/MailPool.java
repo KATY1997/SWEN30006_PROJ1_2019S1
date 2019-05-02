@@ -3,8 +3,11 @@ package strategies;
 import java.util.LinkedList;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.ListIterator;
+import java.util.Map.Entry;
+import java.util.TreeMap;
 import java.util.WeakHashMap;
 
 import automail.MailItem;
@@ -70,12 +73,15 @@ public class MailPool implements IMailPool {
 		int weight = mailItem.getWeight();
 
 		if (weight <= INDIVIDUAL_MAX_WEIGHT) {
+//			item.mailItem.setRobotsNeed(1);
 			poolList.get(0).add(item);
 			poolList.get(0).sort(new ItemComparator());
 		} else if (weight > INDIVIDUAL_MAX_WEIGHT && weight <= PAIR_MAX_WEIGHT) {
+//			item.mailItem.setRobotsNeed(2);
 			poolList.get(1).add(item);
 			poolList.get(1).sort(new ItemComparator());
 		} else if (weight > PAIR_MAX_WEIGHT && weight <= TRIPLE_MAX_WEIGHT) {
+//			item.mailItem.setRobotsNeed(3);s
 			poolList.get(2).add(item);
 			poolList.get(2).sort(new ItemComparator());
 		}else {
@@ -140,31 +146,46 @@ public class MailPool implements IMailPool {
 	 * @throws ItemTooHeavyException
 	 */
 	private int choosePool() {
-		LinkedList<Item> items = new LinkedList<>();
-
-		// iterator all the pools, if there is an item inside, retrieve the
-		// items and put them in a list
+		TreeMap<Item, Integer> map = new TreeMap<>(new ItemComparator());
 		for (int i = 0; i < poolList.size(); i++) {
-			if (poolList.get(i).size() > 0) {
+			if (poolList.get(i).size()>0) {
 				Item item = poolList.get(i).element();
-				items.add(item);
+				map.put(item,i+1);
 			}
 		}
-
-		// sort the List to find highest priority item
-		items.sort(new ItemComparator());
-
-		if (items.size() > 0) {
-			int weight = items.getFirst().mailItem.getWeight();
-			if (weight <= INDIVIDUAL_MAX_WEIGHT) {
-				return 1; // use pool
-			} else if (weight > INDIVIDUAL_MAX_WEIGHT && weight <= PAIR_MAX_WEIGHT) {
-				return 2; // use pairPool
-			} else if (weight > PAIR_MAX_WEIGHT && weight <= TRIPLE_MAX_WEIGHT) {
-				return 3; // use triplePool
-			}
+		
+		if (!map.isEmpty()) {
+			return map.get(map.firstKey());
 		}
-		return 1; // nothing need to be delivered, all the pools are empty
+		
+		return 1;
+		
+		
+//		LinkedList<Item> items = new LinkedList<>();
+//		
+//		// iterator all the pools, if there is an item inside, retrieve the
+//		// items and put them in a list
+//		for (int i = 0; i < poolList.size(); i++) {
+//			if (poolList.get(i).size() > 0) {
+//				Item item = poolList.get(i).element();
+//				items.add(item);
+//			}
+//		}
+//
+//		// sort the List to find highest priority item
+//		items.sort(new ItemComparator());
+//
+//		if (items.size() > 0) {
+//			int weight = items.getFirst().mailItem.getWeight();
+//			if (weight <= INDIVIDUAL_MAX_WEIGHT) {
+//				return 1; // use pool
+//			} else if (weight > INDIVIDUAL_MAX_WEIGHT && weight <= PAIR_MAX_WEIGHT) {
+//				return 2; // use pairPool
+//			} else if (weight > PAIR_MAX_WEIGHT && weight <= TRIPLE_MAX_WEIGHT) {
+//				return 3; // use triplePool
+//			}
+//		}
+//		return 1; // nothing need to be delivered, all the pools are empty
 	}
 
 	@Override
@@ -186,9 +207,9 @@ public class MailPool implements IMailPool {
 	 */
 	public void groupRobots(int poolID, ListIterator<Robot> i) throws ItemTooHeavyException {
 		// checks if there are enough robots in total to carry a heavy item
-//		if (poolID > this.nrobots) {
-//			throw new ItemTooHeavyException();
-//		}
+		if (poolID > this.nrobots) {
+			throw new ItemTooHeavyException();
+		}
 
 		/// if we have enough robots, processing loading procedure
 		if (robots.size() >= poolID && poolList.get(poolID - 1).size() > 0) {
