@@ -86,7 +86,7 @@ public class MailItem {
 		return deliveryCounter;
 	}
 
-	public void setDeliveryCounter(int robotsNeed) {
-		this.deliveryCounter = robotsNeed;
+	public void setDeliveryCounter(int num) {
+		this.deliveryCounter = num;
 	}
 }

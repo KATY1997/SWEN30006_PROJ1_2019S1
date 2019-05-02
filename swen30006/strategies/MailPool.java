@@ -138,7 +138,8 @@ public class MailPool implements IMailPool {
 	}
 
 	/**
-	 * called when robots need to work to deliver an item
+	 * called when robots need to work to deliver an item, if the teamState
+	 * is false, then the robot works individually
 	 * 
 	 * @param poolID
 	 *            : a number that indicates how many robots are required for
