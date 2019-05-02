@@ -1,14 +1,10 @@
 package strategies;
 
-import java.util.LinkedList;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.ListIterator;
-import java.util.Map.Entry;
 import java.util.TreeMap;
-import java.util.WeakHashMap;
 
 import automail.MailItem;
 import automail.PriorityMailItem;
@@ -54,7 +50,7 @@ public class MailPool implements IMailPool {
 	// List of pools for items of different weights
 	private ArrayList<LinkedList<Item>> poolList;
 	private LinkedList<Robot> robots;
-	private int nrobots;
+	private int nrobots;	// the number of robots alltogether
 
 	public MailPool(int nrobots) {
 		// Start empty
@@ -73,18 +69,15 @@ public class MailPool implements IMailPool {
 		int weight = mailItem.getWeight();
 
 		if (weight <= INDIVIDUAL_MAX_WEIGHT) {
-//			item.mailItem.setRobotsNeed(1);
 			poolList.get(0).add(item);
 			poolList.get(0).sort(new ItemComparator());
 		} else if (weight > INDIVIDUAL_MAX_WEIGHT && weight <= PAIR_MAX_WEIGHT) {
-//			item.mailItem.setRobotsNeed(2);
 			poolList.get(1).add(item);
 			poolList.get(1).sort(new ItemComparator());
 		} else if (weight > PAIR_MAX_WEIGHT && weight <= TRIPLE_MAX_WEIGHT) {
-//			item.mailItem.setRobotsNeed(3);s
 			poolList.get(2).add(item);
 			poolList.get(2).sort(new ItemComparator());
-		}else {
+		} else {
 			throw new ItemTooHeavyException();
 		}
 	}
@@ -108,84 +101,35 @@ public class MailPool implements IMailPool {
 		 * the numbers of robot that the item needs to carry it
 		 */
 		int poolID = choosePool();
+		groupRobots(poolID, i, poolID == 1 ? false : true);
 
-		if (poolID == 1) {
-			Robot robot = i.next();
-			assert (robot.isEmpty());
-			ListIterator<Item> poolIterator = poolList.get(poolID - 1).listIterator();
-			if (poolList.get(poolID - 1).size() > 0) {
-				try {
-					// hand first as we want higher priority delivered first
-					robot.setTeamState(false);
-					robot.setNumTeamMembers(poolID);
-					robot.addToHand(poolIterator.next().mailItem);
-					poolIterator.remove();
-					if (poolList.get(poolID - 1).size() > 0) {
-						robot.addToTube(poolIterator.next().mailItem);
-						poolIterator.remove();
-					}
-					// send the robot off if it has any items to deliver
-					robot.dispatch();
-					i.remove(); // remove from mailPool queue
-				} catch (Exception e) {
-					throw e;
-				}
-			}
-		} else {
-			groupRobots(poolID, i);
-		}
 	}
 
 	/**
-	 * compare items in the three pools, returning which pool has the highest
+	 * compare items in pools, returning which pool has the highest
 	 * priority (i.e) which pool need to deliver its item first
 	 * 
-	 * @return a number indicating the pool(1)/pairPool(2)/triplePool(3), the
+	 * @return a number indicating the which pool to fetch. E.g. pool(1)/pairPool(2)/triplePool(3), the
 	 *         number also indicates how many robots are required to deliver the
 	 *         item
-	 * @throws ItemTooHeavyException
 	 */
 	private int choosePool() {
+		// iterator all the pools, if there is an item inside, retrieve the
+		// items and put them in the map
 		TreeMap<Item, Integer> map = new TreeMap<>(new ItemComparator());
 		for (int i = 0; i < poolList.size(); i++) {
-			if (poolList.get(i).size()>0) {
+			if (poolList.get(i).size() > 0) {
 				Item item = poolList.get(i).element();
-				map.put(item,i+1);
+				map.put(item, i + 1);
 			}
 		}
-		
+
 		if (!map.isEmpty()) {
-			return map.get(map.firstKey());
+			return map.get(map.firstKey());	// an number shows which pool to use
 		}
-		
-		return 1;
-		
-		
-//		LinkedList<Item> items = new LinkedList<>();
-//		
-//		// iterator all the pools, if there is an item inside, retrieve the
-//		// items and put them in a list
-//		for (int i = 0; i < poolList.size(); i++) {
-//			if (poolList.get(i).size() > 0) {
-//				Item item = poolList.get(i).element();
-//				items.add(item);
-//			}
-//		}
-//
-//		// sort the List to find highest priority item
-//		items.sort(new ItemComparator());
-//
-//		if (items.size() > 0) {
-//			int weight = items.getFirst().mailItem.getWeight();
-//			if (weight <= INDIVIDUAL_MAX_WEIGHT) {
-//				return 1; // use pool
-//			} else if (weight > INDIVIDUAL_MAX_WEIGHT && weight <= PAIR_MAX_WEIGHT) {
-//				return 2; // use pairPool
-//			} else if (weight > PAIR_MAX_WEIGHT && weight <= TRIPLE_MAX_WEIGHT) {
-//				return 3; // use triplePool
-//			}
-//		}
-//		return 1; // nothing need to be delivered, all the pools are empty
+
+		return 1;	// nothing need to be delivered, all the pools are empty
+
 	}
 
 	@Override
@@ -194,48 +138,54 @@ public class MailPool implements IMailPool {
 	}
 
 	/**
-	 * called when robots need to work in groups to deliver an item
+	 * called when robots need to work to deliver an item
 	 * 
 	 * @param poolID
 	 *            : a number that indicates how many robots are required for
 	 *            this item
-	 * @param thePool
-	 *            : which pool to use
 	 * @param i
 	 *            : the iterator of the linkedList<Robot>
+	 * @param teamState
+	 *            : which teamState the robot need to change to
 	 * @throws ItemTooHeavyException
 	 */
-	public void groupRobots(int poolID, ListIterator<Robot> i) throws ItemTooHeavyException {
+	public void groupRobots(int poolID, ListIterator<Robot> i, boolean teamState) throws ItemTooHeavyException {
 		// checks if there are enough robots in total to carry a heavy item
 		if (poolID > this.nrobots) {
 			throw new ItemTooHeavyException();
 		}
 
-		/// if we have enough robots, processing loading procedure
+		// if we have enough robots and there is an item in the pool, processing loading procedure
 		if (robots.size() >= poolID && poolList.get(poolID - 1).size() > 0) {
 			ListIterator<Item> iterator = poolList.get(poolID - 1).listIterator();
 			MailItem item = iterator.next().mailItem;
-			if (item.getWeight() > TRIPLE_MAX_WEIGHT) {
-				throw new ItemTooHeavyException();
-			}
+
+			// if (item.getWeight() > TRIPLE_MAX_WEIGHT) {
+			// throw new ItemTooHeavyException();
+			// }
 			iterator.remove();
-			// assigns robots to an item, based on the amount of robots needed
-			// to carry it
+			// assigns robots to an item, based on the amount of robots needed to carry it
 			for (int k = 0; k < poolID; k++) {
 				try {
 					Robot robot = i.next();
 					assert (robot.isEmpty());
-					robot.setTeamState(true);// sets the robot to work in a team
-					robot.setNumTeamMembers(poolID); // sets the number of
-														// members in a team
+					robot.setTeamState(teamState);// sets the robot to work in a team
+					robot.setNumTeamMembers(poolID); // sets the number of members in a team
 					robot.addToHand(item);
+
+					// if the robot is fetching the normal pool, load an other item in its tube
+					if (poolID == 1 && poolList.get(0).size() > 0) {
+						robot.addToTube(iterator.next().mailItem);
+						iterator.remove();
+					}
+
 					robot.dispatch();
 					i.remove();
 				} catch (Exception e) {
 					throw e;
 				}
 			}
-		} else { // wait for more robots to come
+		} else { // wait for more robots to come, iterate the next robot
 			Robot robot = i.next();
 			assert (robot.isEmpty());
 		}

@@ -27,6 +27,8 @@ public class Simulation {
 
 	public static void main(String[] args)
 			throws IOException, InstantiationException, IllegalAccessException, ClassNotFoundException, ItemTooHeavyException {
+		
+		
 		Properties automailProperties = new Properties();
 		// Default properties
 		// automailProperties.setProperty("Robots",
@@ -100,10 +102,6 @@ public class Simulation {
 		mailGenerator.generateAllMail();
 		// PriorityMailItem priority; // Not used in this version
 		while (MAIL_DELIVERED.size() != mailGenerator.MAIL_TO_CREATE) {
-			
-			if (Clock.Time() == 204) {
-				System.out.println();
-			}
 	
 			// System.out.printf("Delivered: %4d; Created: %4d%n",
 			// MAIL_DELIVERED.size(), mailGenerator.MAIL_TO_CREATE);
@@ -123,37 +121,17 @@ public class Simulation {
 	}
 
 	static class ReportDelivery implements IMailDelivery {
-//		int count = 0;	// a counter is used when robots working in teams
 
 		/** Confirm the delivery and calculate the total score */
 		public void deliver(MailItem deliveryItem, int numTeamMembers) {
 			if (!MAIL_DELIVERED.contains(deliveryItem)) {
-				
-				deliveryItem.setRobotsNeed( deliveryItem.getRobotsNeed() +1);
-				
-				if (deliveryItem.getRobotsNeed() == numTeamMembers) {
+				deliveryItem.setDeliveryCounter( deliveryItem.getDeliveryCounter() +1);
+				if (deliveryItem.getDeliveryCounter() == numTeamMembers) {
 					MAIL_DELIVERED.add(deliveryItem);
 					System.out.printf("T: %3d > Delivered(%4d) [%s]%n", Clock.Time(), MAIL_DELIVERED.size(), deliveryItem.toString());
 					// Calculate delivery score
 					total_score += calculateDeliveryScore(deliveryItem);
 				}
-				
-				
-//				if(numTeamMembers == 1){ // means only one robot is delivering this item
-//					MAIL_DELIVERED.add(deliveryItem);
-//					System.out.printf("T: %3d > Delivered(%4d) [%s]%n", Clock.Time(), MAIL_DELIVERED.size(), deliveryItem.toString());
-//					// Calculate delivery score
-//					total_score += calculateDeliveryScore(deliveryItem);
-//				}else {
-//					count ++;	// this item is delivered by multiple robots, wait other robots to unload the item
-//					if (count == numTeamMembers) { // all robots arrived
-//						count = 0;	// reset counter
-//						MAIL_DELIVERED.add(deliveryItem);
-//						System.out.printf("T: %3d > Delivered(%4d) [%s]%n", Clock.Time(), MAIL_DELIVERED.size(), deliveryItem.toString());
-//						// Calculate delivery score
-//						total_score += calculateDeliveryScore(deliveryItem);
-//					}
-//				}
 			} else {
 				try {
 					throw new MailAlreadyDeliveredException();

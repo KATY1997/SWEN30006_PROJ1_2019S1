@@ -33,8 +33,7 @@ public class Robot {
 	private MailItem tube = null;
 	
 	private boolean teamState; // true = working in a team, false = working individually
-	private int numTeamMembers; // refers to the number of robots the robot is working with to deliver
-	//an item
+	private int numTeamMembers; // refers to the number of robots the robot is working with to deliver an item
 	private int moveTimer;	// A timer that determines how often moveTowards() must be called before robots can move
 	//1 = normal movement speed, 3 = moveTowards must be called 3 times before the robots can move
 	
@@ -119,10 +118,8 @@ public class Robot {
 			break;
 		case DELIVERING:
 			
-			if (current_floor == destination_floor) { // If already here drop
-														// off either way
+			if (current_floor == destination_floor) { // If already here drop off either way
 				/** Delivery complete, report this to the simulator! */
-				
 				delivery.deliver(deliveryItem, numTeamMembers);
 				
 				// if robots are in a team state, make them work as individuals after delivering an item

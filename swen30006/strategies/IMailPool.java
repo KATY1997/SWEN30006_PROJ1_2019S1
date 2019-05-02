@@ -36,6 +36,6 @@ public interface IMailPool {
 	 * @return
 	 * @throws ItemTooHeavyException 
 	 */
-	void groupRobots(int poolID, ListIterator<Robot> i) throws ItemTooHeavyException;
+	void groupRobots(int poolID, ListIterator<Robot> i, boolean teamState) throws ItemTooHeavyException;
 
 }

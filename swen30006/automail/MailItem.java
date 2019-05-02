@@ -19,7 +19,7 @@ public class MailItem {
     /** The weight in grams of the mail item */
     protected final int weight;
     
-    private int robotsNeeded = 0;
+    private int deliveryCounter = 0;
 
     /**
      * Constructor for a MailItem
@@ -82,11 +82,11 @@ public class MailItem {
 		return hash;
 	}
 
-	public int getRobotsNeed() {
-		return robotsNeeded;
+	public int getDeliveryCounter() {
+		return deliveryCounter;
 	}
 
-	public void setRobotsNeed(int robotsNeed) {
-		this.robotsNeeded = robotsNeed;
+	public void setDeliveryCounter(int robotsNeed) {
+		this.deliveryCounter = robotsNeed;
 	}
 }
