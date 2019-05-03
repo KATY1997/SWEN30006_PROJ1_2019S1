@@ -18,7 +18,7 @@ public class MailItem {
     protected final int arrival_time;
     /** The weight in grams of the mail item */
     protected final int weight;
-    
+    /** A count used to check when deliver the item at the end */
     private int deliveryCounter = 0;
 
     /**

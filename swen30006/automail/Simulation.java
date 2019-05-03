@@ -125,7 +125,10 @@ public class Simulation {
 		/** Confirm the delivery and calculate the total score */
 		public void deliver(MailItem deliveryItem, int numTeamMembers) {
 			if (!MAIL_DELIVERED.contains(deliveryItem)) {
+				// increase the counter
 				deliveryItem.setDeliveryCounter( deliveryItem.getDeliveryCounter() +1);
+				
+				// if all the robots that are delivering this item are coming, then add this item to MAIL_DELIVERED
 				if (deliveryItem.getDeliveryCounter() == numTeamMembers) {
 					MAIL_DELIVERED.add(deliveryItem);
 					System.out.printf("T: %3d > Delivered(%4d) [%s]%n", Clock.Time(), MAIL_DELIVERED.size(), deliveryItem.toString());
