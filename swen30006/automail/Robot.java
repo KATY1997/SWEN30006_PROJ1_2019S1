@@ -14,6 +14,7 @@ public class Robot {
 	static public final int INDIVIDUAL_MAX_WEIGHT = 2000;
 	static public final int PAIR_MAX_WEIGHT = 2600;
 	static public final int TRIPLE_MAX_WEIGHT = 3000;
+	static public final int GROUP_SPEED = 3;
 
 	IMailDelivery delivery;
 	protected final String id;
@@ -171,7 +172,7 @@ public class Robot {
 	 */
 	private void moveTowards(int destination) {
 
-		if (!teamState|| this.moveTimer == 3) {
+		if (!teamState|| this.moveTimer == GROUP_SPEED) {
 			moveTimer = 1;
 			if (current_floor < destination) {
 				current_floor++;
